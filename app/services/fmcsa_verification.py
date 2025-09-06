@@ -2,13 +2,16 @@
 import requests
 import os
 import json
+import logging
 from typing import Dict, Optional
 from dotenv import load_dotenv
 
 load_dotenv() 
 
 FMCSA_API_KEY = os.getenv("FMCSA_API_KEY")
-print(FMCSA_API_KEY)
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 def verify_mc_number(mc_number: str) -> tuple[bool, str]:
     """
@@ -33,7 +36,7 @@ def verify_with_fmcsa_api(clean_mc: str) -> tuple[bool, str]:
     if FMCSA_API_KEY:
         url += f"&webKey={FMCSA_API_KEY}"
 
-    print("url",url)
+    logger.info(f"FMCSA API URL: {url}")
     
     try:
 
@@ -41,30 +44,28 @@ def verify_with_fmcsa_api(clean_mc: str) -> tuple[bool, str]:
         response.raise_for_status()
         data = response.json()
         
-        print(f"FMCSA API Response: {json.dumps(data, indent=2)}")
+        logger.debug(f"FMCSA API Response: {json.dumps(data, indent=2)}")
         
         # Check if carrier exists and is allowed to operate
         if "content" in data and len(data["content"]) > 0:
             carrier_info = data["content"][0]["carrier"]
-            print("carrier info", carrier_info)
+            logger.debug(f"Carrier info: {carrier_info}")
             allowed_to_operate = carrier_info.get("allowedToOperate", "N")
             carrier_name = carrier_info.get("legalName", "Unknown")
             
-            print(f"allowedToOperate: {allowed_to_operate}")
-            print(f"carrier_name: {carrier_name}")
+            logger.info(f"MC {clean_mc} - allowedToOperate: {allowed_to_operate}, carrier_name: {carrier_name}")
             
             if allowed_to_operate == "Y":
-                print("✅ VERIFIED - returning True")
+                logger.info(f"✅ MC {clean_mc} VERIFIED - {carrier_name}")
                 return True, carrier_name
             else:
-                print("❌ NOT VERIFIED - returning False")
-                print(f"   Carrier: {carrier_name}")
+                logger.warning(f"❌ MC {clean_mc} NOT VERIFIED - {carrier_name}")
                 return False, carrier_name
         else:
-
+            logger.warning(f"❌ MC {clean_mc} not found in FMCSA database")
             return False, "Unknown"
             
     except Exception as e:
-
+        logger.error(f"❌ FMCSA API error for MC {clean_mc}: {e}")
         return False, "Unknown"
 

@@ -6,8 +6,13 @@ from app.models.load import Load, CallLog
 from sqlalchemy import func, case
 from datetime import datetime, timedelta
 import os
+import logging
 
 app = FastAPI(title="HappyRobot Inbound Carrier Sales API", version="1.0.0")
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -140,6 +145,6 @@ def get_dashboard_metrics():
                 "hourly_calls": hourly_calls
             }
     except Exception as e:
-        print(f"Error in dashboard metrics: {e}")
+        logger.error(f"Error in dashboard metrics: {e}")
         return {"error": str(e)}
 

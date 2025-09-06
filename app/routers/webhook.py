@@ -5,12 +5,16 @@ from dotenv import load_dotenv
 from app.services.fmcsa_verification import verify_mc_number
 import json
 import os
+import logging
 from datetime import datetime
 
 load_dotenv() 
 
 WEBHOOK_API_KEY = os.getenv("WEBHOOK_API_KEY")
 router = APIRouter()
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 @router.post("/webhook/happyrobot/verify_mc")
 async def verify_mc_endpoint(request: Request, x_api_key: str = Header(None)):
@@ -20,7 +24,7 @@ async def verify_mc_endpoint(request: Request, x_api_key: str = Header(None)):
         raise HTTPException(status_code=403, detail="Invalid API Key")
     
     payload = await request.json()
-    print(f"MC Verification request: {json.dumps(payload, indent=2)}")
+    logger.info(f"MC Verification request: {json.dumps(payload, indent=2)}")
     
     mc_number = payload.get("mc_number", "")
     
@@ -34,7 +38,7 @@ async def verify_mc_endpoint(request: Request, x_api_key: str = Header(None)):
     # Verify MC number
     is_verified, carrier_name = verify_mc_number(mc_number)
     
-    print(f"MC {mc_number} verification result: {is_verified}, Carrier: {carrier_name}")
+    logger.info(f"MC {mc_number} verification result: {is_verified}, Carrier: {carrier_name}")
     
     if is_verified:
         return {
@@ -61,12 +65,13 @@ async def search_load_endpoint(request: Request, x_api_key: str = Header(None)):
         raise HTTPException(status_code=403, detail="Invalid API Key")
     
     payload = await request.json()
-    print(f"Load search request: {json.dumps(payload, indent=2)}")
+    logger.info(f"Load search request: {json.dumps(payload, indent=2)}")
     
     # Extract search criteria
     equipment_type = payload.get("equipment_type", "")
     origin_preference = payload.get("origin", "")
     destination_preference = payload.get("destination", "")
+    commodity_type = payload.get("commodity_type", "")
     equipment_count = payload.get("equipment_count", 1)  # Default to 1 if not provided
     
     # Generate conversation ID if not provided
@@ -92,7 +97,7 @@ async def search_load_endpoint(request: Request, x_api_key: str = Header(None)):
                 ).first()
                 
                 if not equipment_exists:
-                    print(f"Equipment type '{equipment_type}' does not exist in database")
+                    logger.warning(f"Equipment type '{equipment_type}' does not exist in database")
                     return {
                         "load_found": False,
                         "message": "Equipment type not available",
@@ -109,36 +114,52 @@ async def search_load_endpoint(request: Request, x_api_key: str = Header(None)):
                 exact_query = exact_query.filter(Load.origin.ilike(f"%{origin_preference}%"))
             if destination_preference:
                 exact_query = exact_query.filter(Load.destination.ilike(f"%{destination_preference}%"))
+            if commodity_type:
+                exact_query = exact_query.filter(Load.commodity_type.ilike(f"%{commodity_type}%"))
             
             load = exact_query.first()
             
-            # STEP 3: If no exact match, try partial matches for location only (equipment type already verified)
+            # STEP 3: If no exact match, try partial matches for location and commodity (equipment type already verified)
             if not load:
-                print("No exact match found, trying partial matches for location only...")
+                logger.info("No exact match found, trying partial matches for location and commodity...")
                 partial_query = db.query(Load).filter(
                     Load.status == "available",
                     Load.equipment_type.ilike(equipment_type) if equipment_type else True
                 )
                 
-                # Only try partial matches for origin/destination
-                if origin_preference or destination_preference:
+                # Try partial matches for origin/destination and commodity
+                if origin_preference or destination_preference or commodity_type:
+                    from sqlalchemy import or_
                     conditions = []
                     if origin_preference:
                         conditions.append(Load.origin.ilike(f"%{origin_preference}%"))
                     if destination_preference:
                         conditions.append(Load.destination.ilike(f"%{destination_preference}%"))
+                    if commodity_type:
+                        conditions.append(Load.commodity_type.ilike(f"%{commodity_type}%"))
                     
-                    from sqlalchemy import or_
                     partial_query = partial_query.filter(or_(*conditions))
                     load = partial_query.first()
             
             # STEP 4: If still no match, return no loads found message
             if not load:
-                print("No matching loads found for the criteria")
+                logger.warning("No matching loads found for the criteria")
+                criteria_parts = []
+                if equipment_type:
+                    criteria_parts.append(f"{equipment_type} equipment")
+                if commodity_type:
+                    criteria_parts.append(f"{commodity_type} commodity")
+                if origin_preference:
+                    criteria_parts.append(f"from {origin_preference}")
+                if destination_preference:
+                    criteria_parts.append(f"to {destination_preference}")
+                
+                criteria_text = ", ".join(criteria_parts) if criteria_parts else "your criteria"
+                
                 return {
                     "load_found": False,
                     "message": "No matching loads found",
-                    "say": f"I'm sorry, but I couldn't find any loads matching your criteria: {equipment_type} from {origin_preference} to {destination_preference}. Would you like me to search for other available loads?",
+                    "say": f"I'm sorry, but I couldn't find any loads matching {criteria_text}. Would you like me to search for other available loads?",
                     "conversation_id": conversation_id
                 }
             
@@ -147,7 +168,8 @@ async def search_load_endpoint(request: Request, x_api_key: str = Header(None)):
                 Load.status == "available",
                 Load.equipment_type.ilike(f"%{equipment_type}%") if equipment_type else True,
                 Load.origin.ilike(f"%{origin_preference}%") if origin_preference else True,
-                Load.destination.ilike(f"%{destination_preference}%") if destination_preference else True
+                Load.destination.ilike(f"%{destination_preference}%") if destination_preference else True,
+                Load.commodity_type.ilike(f"%{commodity_type}%") if commodity_type else True
             ).count()
             
             if equipment_count > available_loads_count:
@@ -197,7 +219,7 @@ async def search_load_endpoint(request: Request, x_api_key: str = Header(None)):
                 }
                 
         except Exception as e:
-            print(f"Error searching loads: {e}")
+            logger.error(f"Error searching loads: {e}")
             return {
                 "status": "error",
                 "message": f"Failed to search loads: {str(e)}",
@@ -214,7 +236,7 @@ async def summary_endpoint(request: Request, x_api_key: str = Header(None)):
         raise HTTPException(status_code=403, detail="Invalid API Key")
     
     payload = await request.json()
-    print(f"Summary request: {json.dumps(payload, indent=2)}")
+    logger.info(f"Summary request: {json.dumps(payload, indent=2)}")
     
     # Extract summary data
     summary  = payload.get("summary","")
@@ -249,7 +271,7 @@ async def summary_endpoint(request: Request, x_api_key: str = Header(None)):
             }
             
         except Exception as e:
-            print(f"Error saving call summary: {e}")
+            logger.error(f"Error saving call summary: {e}")
             return {
                 "status": "error",
                 "message": f"Failed to save call summary: {str(e)}",

@@ -7,7 +7,6 @@ import sys
 import os
 from datetime import datetime, timedelta
 
-# Add the app directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
 from app.database import engine, Base, get_db_context
@@ -23,7 +22,6 @@ def create_sample_loads():
         # Check if loads already exist
         existing_loads = db.query(Load).count()
         if existing_loads > 0:
-            print(f"Database already contains {existing_loads} loads. Skipping seed.")
             return
         
         # Sample loads data
@@ -136,13 +134,10 @@ def create_sample_loads():
 
 def main():
     """Main function"""
-    print("🌱 Seeding HappyRobot Inbound Carrier Sales Database")
-    print("=" * 60)
     
     try:
         create_sample_loads()
     except Exception as e:
-        print(f"❌ Error seeding database: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
