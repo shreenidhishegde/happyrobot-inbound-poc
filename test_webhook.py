@@ -81,14 +81,14 @@ def test_load_search():
     print("\n📦 Testing Load Search Endpoint")
     print("=" * 40)
     
-    # Test 1: Valid search - Dry Van from Chicago
-    print("\n🚛 Test 1: Dry Van from Chicago")
+    # Test 1: Valid search - Dry Van from Chicago (legacy format)
+    print("\n🚛 Test 1: Dry Van from Chicago (legacy format)")
     payload = {
-        "conversation_id": "test_conv_001",
         "equipment_type": "Dry Van",
         "origin": "Chicago",
         "destination": "Dallas",
-        "commodity_count": 150
+        "weight_capacity": 15000,
+        "available_dates": ["2025-09-10"]
     }
     
     response = send_webhook_request(LOAD_SEARCH_URL, payload)
@@ -332,6 +332,73 @@ def test_dashboard_endpoints():
         print(f"❌ Error testing dashboard HTML: {e}")
         assert False, f"Dashboard HTML test failed: {e}"
 
+def test_carrier_driven_load_search():
+    """Test the new carrier-driven load search with multiple dates"""
+    print("\n🚛 Testing Carrier-Driven Load Search")
+    print("=" * 50)
+    
+    # Test: Carrier with multiple available dates
+    print("\n📅 Test: Carrier with multiple available dates")
+    payload = {
+        "equipment_type": "Dry Van",
+        "origin": "Chicago", 
+        "destination": "Dallas",
+        "weight_capacity": 15000,
+        "available_dates": ["2025-09-10", "2025-09-15", "2025-09-20"]
+    }
+    
+    print(f"Carrier Request: {json.dumps(payload, indent=2)}")
+    
+    response = send_webhook_request(LOAD_SEARCH_URL, payload)
+    print_response(response)
+    
+    # Assert valid load search
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+    data = response.json()
+    assert data.get("load_found") == True, f"Expected load_found=True, got {data.get('load_found')}"
+    assert "best load" in data.get("say", "").lower(), "Expected 'best load' in response"
+    assert data.get("total_rate") > 0, "Expected positive total rate"
+    print("✅ Test PASSED: Carrier-driven load search with multiple dates")
+    
+    # Test: Carrier with insufficient weight capacity
+    print("\n⚖️ Test: Carrier with insufficient weight capacity")
+    payload = {
+        "equipment_type": "Dry Van",
+        "origin": "Chicago", 
+        "destination": "Dallas",
+        "weight_capacity": 5000,  # Too low for any loads
+        "available_dates": ["2025-09-10"]
+    }
+    
+    response = send_webhook_request(LOAD_SEARCH_URL, payload)
+    print_response(response)
+    
+    # Should find no loads due to weight capacity
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+    data = response.json()
+    assert data.get("load_found") == False, f"Expected load_found=False, got {data.get('load_found')}"
+    print("✅ Test PASSED: Weight capacity filtering works")
+    
+    # Test: Invalid equipment type
+    print("\n🚫 Test: Invalid equipment type")
+    payload = {
+        "equipment_type": "Invalid Equipment",
+        "origin": "Chicago", 
+        "destination": "Dallas",
+        "weight_capacity": 15000,
+        "available_dates": ["2025-09-10"]
+    }
+    
+    response = send_webhook_request(LOAD_SEARCH_URL, payload)
+    print_response(response)
+    
+    # Should return equipment not available
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+    data = response.json()
+    assert data.get("load_found") == False, f"Expected load_found=False, got {data.get('load_found')}"
+    assert "equipment type not available" in data.get("say", "").lower(), "Expected equipment not available message"
+    print("✅ Test PASSED: Invalid equipment type handled correctly")
+
 def main():
     """Main test function"""
     print("🧪 HappyRobot Webhook Testing Suite")
@@ -348,6 +415,9 @@ def main():
         
         # Test load search
         test_load_search()
+        
+        # Test new carrier-driven load search
+        test_carrier_driven_load_search()
         
         # Test summary endpoint
         test_summary_endpoint()

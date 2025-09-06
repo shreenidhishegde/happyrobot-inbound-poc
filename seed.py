@@ -24,20 +24,53 @@ def create_sample_loads():
         if existing_loads > 0:
             return
         
-        # Sample loads data
+        # Sample loads data with specific dates for testing
         sample_loads = [
+          
             {
                 "origin": "Chicago, IL",
                 "destination": "Dallas, TX",
-                "pickup_datetime": datetime.now() + timedelta(days=1, hours=10),
-                "delivery_datetime": datetime.now() + timedelta(days=3, hours=18),
+                "pickup_datetime": datetime(2025, 9, 10, 8, 0),  # 2025-09-10 08:00
+                "delivery_datetime": datetime(2025, 9, 11, 18, 0),  # 2025-09-11 18:00
                 "equipment_type": "Dry Van",
-                "loadboard_rate": 2.50,
+                "loadboard_rate": 0.93,  # $0.93 per mile
                 "notes": "No hazmat, residential delivery",
-                "weight": 20000,
+                "weight": 15000,  # Within carrier's 15,000 lbs capacity
+                "commodity_type": "TVs",
+                "num_of_pieces": 50,
+                "miles": 1200,  # 1,200 miles = $1,116 total
+                "dimensions": "53' x 8.5' x 8.5'",
+                "status": "available"
+            },
+          
+            {
+                "origin": "Chicago, IL",
+                "destination": "Dallas, TX",
+                "pickup_datetime": datetime(2025, 9, 15, 9, 0),  # 2025-09-15 09:00
+                "delivery_datetime": datetime(2025, 9, 16, 17, 0),  # 2025-09-16 17:00
+                "equipment_type": "Dry Van",
+                "loadboard_rate": 1.20,  # $1.20 per mile (higher rate)
+                "notes": "Express delivery, electronics",
+                "weight": 12000,  # Within carrier's capacity
                 "commodity_type": "Electronics",
-                "num_of_pieces": 150,
-                "miles": 800,
+                "num_of_pieces": 100,
+                "miles": 1200,  # 1,200 miles = $1,440 total (better rate!)
+                "dimensions": "53' x 8.5' x 8.5'",
+                "status": "available"
+            },
+         
+            {
+                "origin": "Chicago, IL",
+                "destination": "Dallas, TX",
+                "pickup_datetime": datetime(2025, 9, 20, 7, 0),  # 2025-09-20 07:00
+                "delivery_datetime": datetime(2025, 9, 21, 19, 0),  # 2025-09-21 19:00
+                "equipment_type": "Dry Van",
+                "loadboard_rate": 0.85,  # $0.85 per mile (lower rate)
+                "notes": "Standard delivery, furniture",
+                "weight": 18000,  # Within carrier's capacity
+                "commodity_type": "Furniture",
+                "num_of_pieces": 25,
+                "miles": 1200,  # 1,200 miles = $1,020 total
                 "dimensions": "53' x 8.5' x 8.5'",
                 "status": "available"
             },
