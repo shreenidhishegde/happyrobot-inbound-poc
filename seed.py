@@ -30,15 +30,15 @@ def create_sample_loads():
             {
                 "origin": "Chicago, IL",
                 "destination": "Dallas, TX",
-                "pickup_datetime": datetime(2025, 9, 10, 8, 0),  # 2025-09-10 08:00
-                "delivery_datetime": datetime(2025, 9, 11, 18, 0),  # 2025-09-11 18:00
+                "pickup_datetime": datetime(2025, 9, 10, 8, 0),  
+                "delivery_datetime": datetime(2025, 9, 11, 18, 0), 
                 "equipment_type": "Dry Van",
-                "loadboard_rate": 0.93,  # $0.93 per mile
+                "loadboard_rate": 0.93,  
                 "notes": "No hazmat, residential delivery",
-                "weight": 15000,  # Within carrier's 15,000 lbs capacity
+                "weight": 15000, 
                 "commodity_type": "TVs",
                 "num_of_pieces": 50,
-                "miles": 1200,  # 1,200 miles = $1,116 total
+                "miles": 1200,  
                 "dimensions": "53' x 8.5' x 8.5'",
                 "status": "available"
             },
@@ -46,15 +46,15 @@ def create_sample_loads():
             {
                 "origin": "Chicago, IL",
                 "destination": "Dallas, TX",
-                "pickup_datetime": datetime(2025, 9, 15, 9, 0),  # 2025-09-15 09:00
-                "delivery_datetime": datetime(2025, 9, 16, 17, 0),  # 2025-09-16 17:00
+                "pickup_datetime": datetime(2025, 9, 15, 9, 0), 
+                "delivery_datetime": datetime(2025, 9, 16, 17, 0),  
                 "equipment_type": "Dry Van",
-                "loadboard_rate": 1.20,  # $1.20 per mile (higher rate)
+                "loadboard_rate": 1.20, 
                 "notes": "Express delivery, electronics",
-                "weight": 12000,  # Within carrier's capacity
+                "weight": 12000,  
                 "commodity_type": "Electronics",
                 "num_of_pieces": 100,
-                "miles": 1200,  # 1,200 miles = $1,440 total (better rate!)
+                "miles": 1200,  
                 "dimensions": "53' x 8.5' x 8.5'",
                 "status": "available"
             },
@@ -62,23 +62,23 @@ def create_sample_loads():
             {
                 "origin": "Chicago, IL",
                 "destination": "Dallas, TX",
-                "pickup_datetime": datetime(2025, 9, 20, 7, 0),  # 2025-09-20 07:00
-                "delivery_datetime": datetime(2025, 9, 21, 19, 0),  # 2025-09-21 19:00
+                "pickup_datetime": datetime(2025, 9, 20, 7, 0),  
+                "delivery_datetime": datetime(2025, 9, 21, 19, 0), 
                 "equipment_type": "Dry Van",
-                "loadboard_rate": 0.85,  # $0.85 per mile (lower rate)
+                "loadboard_rate": 0.85,  
                 "notes": "Standard delivery, furniture",
-                "weight": 18000,  # Within carrier's capacity
+                "weight": 18000,  
                 "commodity_type": "Furniture",
                 "num_of_pieces": 25,
-                "miles": 1200,  # 1,200 miles = $1,020 total
+                "miles": 1200,  
                 "dimensions": "53' x 8.5' x 8.5'",
                 "status": "available"
             },
             {
                 "origin": "Los Angeles, CA",
                 "destination": "Phoenix, AZ",
-                "pickup_datetime": datetime.now() + timedelta(days=1, hours=8),
-                "delivery_datetime": datetime.now() + timedelta(days=1, hours=20),
+                "pickup_datetime": datetime(2025, 9, 12, 8, 0),
+                "delivery_datetime": datetime(2025, 9, 12, 20, 0),
                 "equipment_type": "Flatbed",
                 "loadboard_rate": 3.25,
                 "notes": "Tarps required, oversized load",
@@ -92,8 +92,8 @@ def create_sample_loads():
             {
                 "origin": "Atlanta, GA",
                 "destination": "Miami, FL",
-                "pickup_datetime": datetime.now() + timedelta(days=2, hours=9),
-                "delivery_datetime": datetime.now() + timedelta(days=3, hours=15),
+                "pickup_datetime": datetime(2025, 9, 18, 9, 0),
+                "delivery_datetime": datetime(2025, 9, 19, 15, 0),
                 "equipment_type": "Reefer",
                 "loadboard_rate": 2.75,
                 "notes": "Temperature controlled, food grade",
@@ -107,8 +107,8 @@ def create_sample_loads():
             {
                 "origin": "Seattle, WA",
                 "destination": "Portland, OR",
-                "pickup_datetime": datetime.now() + timedelta(days=1, hours=14),
-                "delivery_datetime": datetime.now() + timedelta(days=1, hours=22),
+                "pickup_datetime": datetime(2025, 9, 14, 14, 0),
+                "delivery_datetime": datetime(2025, 9, 14, 22, 0),
                 "equipment_type": "Dry Van",
                 "loadboard_rate": 2.00,
                 "notes": "Express delivery, no stops",
@@ -122,8 +122,8 @@ def create_sample_loads():
             {
                 "origin": "Denver, CO",
                 "destination": "Kansas City, MO",
-                "pickup_datetime": datetime.now() + timedelta(days=2, hours=7),
-                "delivery_datetime": datetime.now() + timedelta(days=3, hours=12),
+                "pickup_datetime": datetime(2025, 9, 22, 7, 0),
+                "delivery_datetime": datetime(2025, 9, 23, 12, 0),
                 "equipment_type": "Power Only",
                 "loadboard_rate": 1.75,
                 "notes": "Trailer provided, driver assist loading",
@@ -137,8 +137,8 @@ def create_sample_loads():
             {
                 "origin": "Los Angeles, CA",
                 "destination": "Phoenix, AZ",
-                "pickup_datetime": datetime.now() + timedelta(days=1, hours=12),
-                "delivery_datetime": datetime.now() + timedelta(days=2, hours=8),
+                "pickup_datetime": datetime(2025, 9, 16, 12, 0),
+                "delivery_datetime": datetime(2025, 9, 17, 8, 0),
                 "equipment_type": "Dry Van",
                 "loadboard_rate": 2.80,
                 "notes": "Fragile electronics, white glove delivery",
