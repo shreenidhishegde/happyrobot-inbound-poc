@@ -44,16 +44,17 @@ def get_dashboard_metrics():
             total_calls = db.query(CallLog).count()
             unique_carriers = db.query(CallLog.mc_number).distinct().count()
             
-            # Get call outcomes
-            booked_calls = db.query(CallLog).filter(CallLog.call_outcome == "booked").count()
-            declined_calls = db.query(CallLog).filter(CallLog.call_outcome == "declined").count()
-            no_match_calls = db.query(CallLog).filter(CallLog.call_outcome == "no_match").count()
+            # Get call outcomes using HappyRobot's actual values
+            won_calls = db.query(CallLog).filter(CallLog.call_outcome == "won").count()
+            lost_calls = db.query(CallLog).filter(CallLog.call_outcome == "lost").count()
+            no_load_calls = db.query(CallLog).filter(CallLog.call_outcome == "no-load").count()
+            verification_failed_calls = db.query(CallLog).filter(CallLog.call_outcome == "verification-failed").count()
             callback_needed = db.query(CallLog).filter(CallLog.call_outcome == "callback-needed").count()
             
             # Calculate success rate
             success_rate = 0
             if total_calls > 0:
-                success_rate = round((booked_calls / total_calls) * 100, 1)
+                success_rate = round((won_calls / total_calls) * 100, 1)
             
             # Get sentiment breakdown
             positive_sentiment = db.query(CallLog).filter(CallLog.sentiment == "positive").count()
@@ -63,17 +64,17 @@ def get_dashboard_metrics():
             # Get today's metrics
             today = datetime.now().date()
             today_calls = db.query(CallLog).filter(func.date(CallLog.created_at) == today).count()
-            today_booked = db.query(CallLog).filter(
+            today_won = db.query(CallLog).filter(
                 func.date(CallLog.created_at) == today,
-                CallLog.call_outcome == "booked"
+                CallLog.call_outcome == "won"
             ).count()
             
             # Get this week's metrics
             week_ago = datetime.now() - timedelta(days=7)
             week_calls = db.query(CallLog).filter(CallLog.created_at >= week_ago).count()
-            week_booked = db.query(CallLog).filter(
+            week_won = db.query(CallLog).filter(
                 CallLog.created_at >= week_ago,
-                CallLog.call_outcome == "booked"
+                CallLog.call_outcome == "won"
             ).count()
             
             # Get recent call activity (last 7 days)
@@ -81,14 +82,14 @@ def get_dashboard_metrics():
             for i in range(7):
                 date = (datetime.now() - timedelta(days=i)).date()
                 day_calls = db.query(CallLog).filter(func.date(CallLog.created_at) == date).count()
-                day_booked = db.query(CallLog).filter(
+                day_won = db.query(CallLog).filter(
                     func.date(CallLog.created_at) == date,
-                    CallLog.call_outcome == "booked"
+                    CallLog.call_outcome == "won"
                 ).count()
                 recent_activity.append({
                     "date": date.strftime("%Y-%m-%d"),
                     "calls": day_calls,
-                    "booked": day_booked
+                    "won": day_won
                 })
             
             # Get top carriers by call volume
@@ -96,7 +97,7 @@ def get_dashboard_metrics():
                 CallLog.mc_number,
                 CallLog.carrier_name,
                 func.count(CallLog.id).label('call_count'),
-                func.sum(case((CallLog.call_outcome == "booked", 1), else_=0)).label('booked_count')
+                func.sum(case((CallLog.call_outcome == "won", 1), else_=0)).label('won_count')
             ).group_by(CallLog.mc_number, CallLog.carrier_name).order_by(func.count(CallLog.id).desc()).limit(5).all()
             
             # Get duration analytics
@@ -124,20 +125,21 @@ def get_dashboard_metrics():
                 "available_loads": available_loads,
                 "total_calls": total_calls,
                 "unique_carriers": unique_carriers,
-                "booked_calls": booked_calls,
-                "declined_calls": declined_calls,
-                "no_match_calls": no_match_calls,
+                "won_calls": won_calls,
+                "lost_calls": lost_calls,
+                "no_load_calls": no_load_calls,
+                "verification_failed_calls": verification_failed_calls,
                 "callback_needed": callback_needed,
                 "success_rate": success_rate,
                 "positive_sentiment": positive_sentiment,
                 "negative_sentiment": negative_sentiment,
                 "neutral_sentiment": neutral_sentiment,
                 "today_calls": today_calls,
-                "today_booked": today_booked,
+                "today_won": today_won,
                 "week_calls": week_calls,
-                "week_booked": week_booked,
+                "week_won": week_won,
                 "recent_activity": recent_activity,
-                "top_carriers": [{"mc_number": c.mc_number, "carrier_name": c.carrier_name, "call_count": c.call_count, "booked_count": c.booked_count} for c in top_carriers],
+                "top_carriers": [{"mc_number": c.mc_number, "carrier_name": c.carrier_name, "call_count": c.call_count, "won_count": c.won_count} for c in top_carriers],
                 "avg_duration": round(avg_duration, 1),
                 "max_duration": max_duration,
                 "min_duration": min_duration,

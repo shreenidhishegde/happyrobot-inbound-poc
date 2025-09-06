@@ -1,11 +1,21 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from contextlib import contextmanager
+import os
 
-DATABASE_URL = "sqlite:///./happyrobot.db"
+# Use Railway's PostgreSQL if available, otherwise fallback to SQLite
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./happyrobot.db")
 
-# Create DB engine
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Convert Railway's postgres:// to postgresql:// for SQLAlchemy
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Create DB engine with appropriate settings
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    # PostgreSQL settings
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
