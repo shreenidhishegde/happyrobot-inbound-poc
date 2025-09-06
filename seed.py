@@ -42,6 +42,22 @@ def create_sample_loads():
                 "dimensions": "53' x 8.5' x 8.5'",
                 "status": "available"
             },
+
+            {
+                "origin": "Chicago, IL",
+                "destination": "Dallas, TX",
+                "pickup_datetime": datetime(2025, 9, 10, 8, 0),  
+                "delivery_datetime": datetime(2025, 9, 11, 18, 0), 
+                "equipment_type": "Dry Van",
+                "loadboard_rate": 1.20,  
+                "notes": "No hazmat, residential delivery",
+                "weight": 15000, 
+                "commodity_type": "TVs",
+                "num_of_pieces": 50,
+                "miles": 1200,  
+                "dimensions": "53' x 8.5' x 8.5'",
+                "status": "available"
+            },
           
             {
                 "origin": "Chicago, IL",

@@ -93,11 +93,12 @@ async def search_load_endpoint(request: Request, x_api_key: str = Header(None)):
                         "say": f"I'm sorry, but we don't have any {equipment_type} equipment available. Our available equipment types are: Dry Van, Flatbed, Reefer, and Power Only. Would you like to search for loads with any of these equipment types?"
                     }
             
-            # STEP 2: Find loads matching carrier's criteria - check all available dates
+            # STEP 2: Find loads matching carrier's criteria - check ALL dates for best rate
             load = None
             best_total_rate = 0
+            all_candidate_loads = []
             
-            # Try each available date until we find a match
+            # Check each available date and collect all matching loads
             for available_date in available_dates:
                 logger.info(f"Checking loads for date: {available_date}")
                 
@@ -123,30 +124,31 @@ async def search_load_endpoint(request: Request, x_api_key: str = Header(None)):
                 if weight_capacity > 0:
                     base_query = base_query.filter(Load.weight <= weight_capacity)
                 
-                # Find the load with the highest total rate for this date
+                # Get all loads for this date
                 loads = base_query.all()
                 if loads:
                     logger.info(f"Found {len(loads)} loads for date {available_date}")
-                    
-                    # Calculate total rate for each load and pick the best one
-                    for candidate_load in loads:
-                        base_rate = candidate_load.loadboard_rate
-                        miles = getattr(candidate_load, 'miles', 0) or 0
-                        total_rate = base_rate * miles if miles > 0 else base_rate
-                        
-                        if total_rate > best_total_rate:
-                            best_total_rate = total_rate
-                            load = candidate_load
-                            logger.info(f"Found better load for {available_date} with total rate ${total_rate:,.2f}")
-                    
-                    # Stop at first date that has loads (we found the best one)
-                    if load:
-                        logger.info(f"Selected best load from date {available_date} with total rate ${best_total_rate:,.2f}")
-                        break
+                    all_candidate_loads.extend(loads)
                 else:
                     logger.info(f"No loads found for date {available_date}")
             
-            if not load:
+            # Now find the absolute best load across ALL dates
+            if all_candidate_loads:
+                logger.info(f"Evaluating {len(all_candidate_loads)} total loads across all dates")
+                
+                for candidate_load in all_candidate_loads:
+                    base_rate = candidate_load.loadboard_rate
+                    miles = getattr(candidate_load, 'miles', 0) or 0
+                    total_rate = base_rate * miles if miles > 0 else base_rate
+                    
+                    if total_rate > best_total_rate:
+                        best_total_rate = total_rate
+                        load = candidate_load
+                        logger.info(f"Found better load: ID {candidate_load.load_id} on {candidate_load.pickup_datetime.date()} with total rate ${total_rate:,.2f}")
+                
+                if load:
+                    logger.info(f"Selected absolute best load: ID {load.load_id} on {load.pickup_datetime.date()} with total rate ${best_total_rate:,.2f}")
+            else:
                 logger.info("No loads found for any of the available dates")
             
             # STEP 3: If no exact match, try partial matches for location only (equipment type already verified)
@@ -168,30 +170,31 @@ async def search_load_endpoint(request: Request, x_api_key: str = Header(None)):
                     
                     partial_query = partial_query.filter(or_(*conditions))
                     load = partial_query.first()
-            
-            # STEP 4: If still no match, return no loads found message
-            if not load:
-                logger.warning("No matching loads found for the criteria")
-                criteria_parts = []
-                if equipment_type:
-                    criteria_parts.append(f"{equipment_type} equipment")
-                if weight_capacity:
-                    criteria_parts.append(f"weight capacity {weight_capacity} lbs")
-                if available_dates:
-                    criteria_parts.append(f"available {', '.join(available_dates)}")
-                if origin_preference:
-                    criteria_parts.append(f"from {origin_preference}")
-                if destination_preference:
-                    criteria_parts.append(f"to {destination_preference}")
                 
-                criteria_text = ", ".join(criteria_parts) if criteria_parts else "your criteria"
-                
-                return {
-                    "load_found": False,
-                    "message": "No matching loads found",
-                    "say": f"I'm sorry, but I couldn't find any loads matching {criteria_text}. Would you like me to search for other available loads?"
-                }
+                # If still no match, return no loads found message
+                if not load:
+                    logger.warning("No matching loads found for the criteria")
+                    criteria_parts = []
+                    if equipment_type:
+                        criteria_parts.append(f"{equipment_type} equipment")
+                    if weight_capacity:
+                        criteria_parts.append(f"weight capacity {weight_capacity} lbs")
+                    if available_dates:
+                        criteria_parts.append(f"available {', '.join(available_dates)}")
+                    if origin_preference:
+                        criteria_parts.append(f"from {origin_preference}")
+                    if destination_preference:
+                        criteria_parts.append(f"to {destination_preference}")
+                    
+                    criteria_text = ", ".join(criteria_parts) if criteria_parts else "your criteria"
+                    
+                    return {
+                        "load_found": False,
+                        "message": "No matching loads found",
+                        "say": f"I'm sorry, but I couldn't find any loads matching {criteria_text}. Would you like me to search for other available loads?"
+                    }
             
+            # STEP 5: Return the best load found
             if load:
                 logger.info(f"Load found: ID {load.load_id}, Equipment: {load.equipment_type}, Commodity: {load.commodity_type}, Origin: {load.origin}, Destination: {load.destination}")
                 
@@ -278,7 +281,6 @@ async def summary_endpoint(request: Request, x_api_key: str = Header(None)):
             db.add(call_log)
             db.commit()
 
-  
             return {
                 "status": "success",
                 "message": "Call summary saved successfully",
