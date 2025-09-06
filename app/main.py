@@ -89,9 +89,10 @@ def get_dashboard_metrics():
             # Get top carriers by call volume
             top_carriers = db.query(
                 CallLog.mc_number,
+                CallLog.carrier_name,
                 func.count(CallLog.id).label('call_count'),
                 func.sum(case((CallLog.call_outcome == "booked", 1), else_=0)).label('booked_count')
-            ).group_by(CallLog.mc_number).order_by(func.count(CallLog.id).desc()).limit(5).all()
+            ).group_by(CallLog.mc_number, CallLog.carrier_name).order_by(func.count(CallLog.id).desc()).limit(5).all()
             
             # Get duration analytics
             avg_duration = db.query(func.avg(CallLog.duration)).scalar() or 0
@@ -131,7 +132,7 @@ def get_dashboard_metrics():
                 "week_calls": week_calls,
                 "week_booked": week_booked,
                 "recent_activity": recent_activity,
-                "top_carriers": [{"mc_number": c.mc_number, "call_count": c.call_count, "booked_count": c.booked_count} for c in top_carriers],
+                "top_carriers": [{"mc_number": c.mc_number, "carrier_name": c.carrier_name, "call_count": c.call_count, "booked_count": c.booked_count} for c in top_carriers],
                 "avg_duration": round(avg_duration, 1),
                 "max_duration": max_duration,
                 "min_duration": min_duration,

@@ -134,24 +134,20 @@
             <div class="metric-value" id="success-rate">-</div>
         </div>
         <div class="metric-card">
-            <div class="metric-label">Unique Carriers</div>
-            <div class="metric-value" id="unique-carriers">-</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Booked Calls</div>
-            <div class="metric-value" id="booked-calls">-</div>
-        </div>
-        <div class="metric-card">
             <div class="metric-label">Callback Needed</div>
             <div class="metric-value" id="callback-needed">-</div>
         </div>
         <div class="metric-card">
-            <div class="metric-label">Avg Call Duration</div>
-            <div class="metric-value" id="avg-duration">-</div>
+            <div class="metric-label">Positive Sentiment</div>
+            <div class="metric-value" id="positive-sentiment">-</div>
         </div>
         <div class="metric-card">
-            <div class="metric-label">Longest Call</div>
-            <div class="metric-value" id="max-duration">-</div>
+            <div class="metric-label">Negative Sentiment</div>
+            <div class="metric-value" id="negative-sentiment">-</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Neutral Sentiment</div>
+            <div class="metric-value" id="neutral-sentiment">-</div>
         </div>
     </div>
 
@@ -176,14 +172,15 @@
             <canvas id="carriersChart" width="400" height="200"></canvas>
         </div>
 
-        <div class="chart-container" id="durationContainer">
-            <div class="chart-title">⏱️ Duration by Outcome</div>
-            <canvas id="durationChart" width="400" height="200"></canvas>
-        </div>
 
         <div class="chart-container" id="hourlyContainer">
             <div class="chart-title">🕐 Hourly Distribution</div>
             <canvas id="hourlyChart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="chart-container" id="sentimentContainer">
+            <div class="chart-title">😊 Carrier Sentiment</div>
+            <canvas id="sentimentChart" width="400" height="200"></canvas>
         </div>
     </div>
 
@@ -206,11 +203,10 @@
                 document.getElementById('today-calls').textContent = metrics.today_calls || 0;
                 document.getElementById('week-calls').textContent = metrics.week_calls || 0;
                 document.getElementById('success-rate').textContent = (metrics.success_rate || 0) + '%';
-                document.getElementById('unique-carriers').textContent = metrics.unique_carriers || 0;
-                document.getElementById('booked-calls').textContent = metrics.booked_calls || 0;
                 document.getElementById('callback-needed').textContent = metrics.callback_needed || 0;
-                document.getElementById('avg-duration').textContent = (metrics.avg_duration || 0) + 's';
-                document.getElementById('max-duration').textContent = (metrics.max_duration || 0) + 's';
+                document.getElementById('positive-sentiment').textContent = metrics.positive_sentiment || 0;
+                document.getElementById('negative-sentiment').textContent = metrics.negative_sentiment || 0;
+                document.getElementById('neutral-sentiment').textContent = metrics.neutral_sentiment || 0;
 
                 // Equipment type chart - use available loads from metrics
                 const equipmentData = {};
@@ -330,7 +326,7 @@
                     new Chart(document.getElementById('carriersChart'), {
                         type: 'bar',
                         data: {
-                            labels: carriersData.map(c => `MC ${c.mc_number}`),
+                            labels: carriersData.map(c => c.carrier_name || `MC ${c.mc_number}`),
                             datasets: [{
                                 label: 'Total Calls',
                                 data: carriersData.map(c => c.call_count),
@@ -364,41 +360,6 @@
                     document.getElementById('carriersContainer').innerHTML = '<div class="chart-title">🚛 Top Carriers</div><div class="no-data">No carrier data available yet</div>';
                 }
 
-                // Duration by outcome chart - only show if there's duration data
-                const durationData = metrics.duration_by_outcome || [];
-                if (durationData.length > 0) {
-                    new Chart(document.getElementById('durationChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: durationData.map(d => d.outcome),
-                            datasets: [{
-                                label: 'Avg Duration (seconds)',
-                                data: durationData.map(d => d.avg_duration),
-                                backgroundColor: '#FF9800'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: { font: { size: 10 } }
-                                },
-                                x: {
-                                    ticks: { font: { size: 10 } }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    labels: { font: { size: 10 } }
-                                }
-                            }
-                        }
-                    });
-                } else {
-                    document.getElementById('durationContainer').innerHTML = '<div class="chart-title">⏱️ Duration by Outcome</div><div class="no-data">No duration data available yet</div>';
-                }
 
                 // Hourly distribution chart - only show if there are hourly calls
                 const hourlyData = metrics.hourly_calls || [];
@@ -437,6 +398,39 @@
                     });
                 } else {
                     document.getElementById('hourlyContainer').innerHTML = '<div class="chart-title">🕐 Hourly Distribution</div><div class="no-data">No hourly data available yet</div>';
+                }
+
+                // Sentiment chart - only show if there's sentiment data
+                const totalSentiment = (metrics.positive_sentiment || 0) + (metrics.negative_sentiment || 0) + (metrics.neutral_sentiment || 0);
+                if (totalSentiment > 0) {
+                    new Chart(document.getElementById('sentimentChart'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Positive', 'Negative', 'Neutral'],
+                            datasets: [{
+                                data: [
+                                    metrics.positive_sentiment || 0,
+                                    metrics.negative_sentiment || 0,
+                                    metrics.neutral_sentiment || 0
+                                ],
+                                backgroundColor: ['#4CAF50', '#f44336', '#FF9800']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        font: { size: 10 }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    document.getElementById('sentimentContainer').innerHTML = '<div class="chart-title">😊 Carrier Sentiment</div><div class="no-data">No sentiment data available yet</div>';
                 }
 
             } catch (error) {
