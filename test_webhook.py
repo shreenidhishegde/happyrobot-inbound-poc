@@ -105,11 +105,11 @@ def test_load_search():
     # Test 2: Invalid equipment type - TV
     print("\n📺 Test 2: TV equipment (should fail)")
     payload = {
-        "conversation_id": "test_conv_002",
         "equipment_type": "TV",
         "origin": "LA",
         "destination": "Phoenix",
-        "commodity_count": 50
+        "weight_capacity": 15000,
+        "available_dates": ["2025-09-10"]
     }
     
     response = send_webhook_request(LOAD_SEARCH_URL, payload)
