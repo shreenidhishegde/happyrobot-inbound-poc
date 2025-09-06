@@ -242,20 +242,21 @@
                 });
 
                 // Call outcomes chart - only show if there are calls
-                const totalCalls = (metrics.booked_calls || 0) + (metrics.declined_calls || 0) + (metrics.no_match_calls || 0) + (metrics.callback_needed || 0);
+                const totalCalls = (metrics.won_calls || 0) + (metrics.lost_calls || 0) + (metrics.no_load_calls || 0) + (metrics.verification_failed_calls || 0) + (metrics.callback_needed || 0);
                 if (totalCalls > 0) {
                     new Chart(document.getElementById('outcomesChart'), {
                         type: 'doughnut',
                         data: {
-                            labels: ['Booked', 'Declined', 'No Match', 'Callback Needed'],
+                            labels: ['Won', 'Lost', 'No Load', 'Verification Failed', 'Callback Needed'],
                             datasets: [{
                                 data: [
-                                    metrics.booked_calls || 0,
-                                    metrics.declined_calls || 0,
-                                    metrics.no_match_calls || 0,
+                                    metrics.won_calls || 0,
+                                    metrics.lost_calls || 0,
+                                    metrics.no_load_calls || 0,
+                                    metrics.verification_failed_calls || 0,
                                     metrics.callback_needed || 0
                                 ],
-                                backgroundColor: ['#4CAF50', '#f44336', '#FF9800', '#2196F3']
+                                backgroundColor: ['#4CAF50', '#f44336', '#FF9800', '#FF5722', '#2196F3']
                             }]
                         },
                         options: {
@@ -290,8 +291,8 @@
                                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                                 fill: true
                             }, {
-                                label: 'Booked Calls',
-                                data: activityData.map(d => d.booked),
+                                label: 'Won Calls',
+                                data: activityData.map(d => d.won),
                                 borderColor: '#4CAF50',
                                 backgroundColor: 'rgba(76, 175, 80, 0.1)',
                                 fill: true
