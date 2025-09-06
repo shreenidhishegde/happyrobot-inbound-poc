@@ -88,7 +88,7 @@ def test_load_search():
         "equipment_type": "Dry Van",
         "origin": "Chicago",
         "destination": "Dallas",
-        "equipment_count": 1
+        "commodity_count": 150
     }
     
     response = send_webhook_request(LOAD_SEARCH_URL, payload)
@@ -109,7 +109,7 @@ def test_load_search():
         "equipment_type": "TV",
         "origin": "LA",
         "destination": "Phoenix",
-        "equipment_count": 1
+        "commodity_count": 50
     }
     
     response = send_webhook_request(LOAD_SEARCH_URL, payload)
