@@ -15,8 +15,12 @@ Base.metadata.create_all(bind=engine)
 # Include routers
 app.include_router(webhook.router)
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "HappyRobot Inbound API"}
+
 @app.get("/", response_class=HTMLResponse)
-def read_root():
+def dashboard():
     """Serve the dashboard HTML template"""
     template_path = os.path.join(os.path.dirname(__file__), "..", "templates", "dashboard.html")
     with open(template_path, "r") as f:
@@ -138,13 +142,3 @@ def get_dashboard_metrics():
         print(f"Error in dashboard metrics: {e}")
         return {"error": str(e)}
 
-@app.get("/loads")
-def get_loads():
-    """Get all available loads"""
-    with get_db_context() as db:
-        loads = db.query(Load).filter(Load.status == "available").all()
-        return loads
-
-@app.get("/health")
-def health_check():
-    return {"status": "healthy", "service": "HappyRobot Inbound API"}
